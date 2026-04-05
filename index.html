@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Shopping Hub | Premium Quality Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1e40af;
+            --secondary: #fbbf24;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --white: #ffffff;
+            --gray: #64748b;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--light);
+            color: var(--dark);
+        }
+
+        /* --- Navigation --- */
+        header {
+            background: var(--white);
+            padding: 15px 8%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .logo span { color: var(--secondary); }
+
+        nav a {
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 500;
+            margin-left: 25px;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+
+        nav a:hover { color: var(--primary); }
+
+        /* --- Hero Section --- */
+        .hero {
+            background: linear-gradient(rgba(30, 64, 175, 0.05), rgba(30, 64, 175, 0.02));
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        .hero h1 { font-size: 36px; margin-bottom: 10px; color: var(--dark); }
+        .hero p { color: var(--gray); font-size: 16px; }
+
+        /* --- Product Grid --- */
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+        }
+
+        .product-card {
+            background: var(--white);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.03);
+            transition: all 0.3s ease;
+            border: 1px solid #edf2f7;
+        }
+
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+
+        .product-image {
+            width: 100%;
+            height: 320px;
+            object-fit: cover;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .product-info { padding: 20px; }
+
+        .category-tag {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--primary);
+            text-transform: uppercase;
+            background: #eff6ff;
+            padding: 4px 10px;
+            border-radius: 50px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .product-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 5px 0 12px;
+            color: var(--dark);
+        }
+
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+        }
+
+        .price { font-size: 22px; font-weight: 700; color: var(--dark); }
+
+        .buy-btn {
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .buy-btn:hover { background: #1e3a8a; transform: scale(1.05); }
+
+        /* --- Order Modal --- */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(8px);
+        }
+
+        .modal-content {
+            background: var(--white);
+            margin: 5% auto;
+            padding: 35px;
+            border-radius: 24px;
+            width: 90%;
+            max-width: 440px;
+            position: relative;
+            animation: modalFade 0.4s ease;
+        }
+
+        @keyframes modalFade {
+            from { transform: translateY(40px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .close-modal {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--gray);
+        }
+
+        .modal-header h3 { margin: 0; font-size: 24px; color: var(--dark); }
+        .modal-header p { color: var(--gray); font-size: 14px; margin: 5px 0 20px; }
+
+        .selected-item {
+            background: #f1f5f9;
+            padding: 12px 18px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            font-size: 14px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            font-family: inherit;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        .form-group input:focus, .form-group textarea:focus { border-color: var(--primary); }
+
+        .confirm-order-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        /* --- Footer & WhatsApp --- */
+        footer {
+            background: var(--dark);
+            color: var(--white);
+            padding: 60px 20px 30px;
+            text-align: center;
+        }
+
+        .f-links a { color: #94a3b8; text-decoration: none; margin: 0 15px; font-size: 14px; }
+        .f-links a:hover { color: var(--white); }
+
+        .whatsapp-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #25d366;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+
+        .admin-trigger {
+            color: #0f172a; /* Hidden Dot */
+            text-decoration: none;
+            font-size: 14px;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="index.html" class="logo">Online Shopping <span>Hub</span></a>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="contact.html">Contact Us</a>
+    </nav>
+</header>
+
+<div class="hero">
+    <h1>Trending Collections</h1>
+    <p>Premium Quality Products • Cash on Delivery • Fast Shipping</p>
+</div>
+
+<div class="container">
+    <div class="product-grid" id="product-container">
+        </div>
+</div>
+
+<div id="orderModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <div class="modal-header">
+            <h3>Checkout</h3>
+            <p>Enter your delivery details below</p>
+        </div>
+        <div class="selected-item">
+            Product: <span id="p-name-display" style="font-weight: 700; color: var(--primary);"></span>
+        </div>
+        <form id="orderForm">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="cust-name" placeholder="Enter your name" required>
+            </div>
+            <div class="form-group">
+                <label>Phone Number</label>
+                <input type="tel" id="cust-phone" placeholder="Enter mobile number" required>
+            </div>
+            <div class="form-group">
+                <label>Shipping Address</label>
+                <textarea id="cust-address" rows="3" placeholder="Full address with City and Pincode" required></textarea>
+            </div>
+            <button type="submit" class="confirm-order-btn">Confirm Order (COD)</button>
+        </form>
+    </div>
+</div>
+
+<a href="https://wa.me/918872019936" class="whatsapp-btn" target="_blank">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="35" alt="WhatsApp">
+</a>
+
+<footer>
+    <div class="f-links">
+        <a href="index.html">Home</a>
+        <a href="contact.html">Contact Us</a>
+        <a href="policy.html">Privacy Policy</a>
+    </div>
+    <p style="margin-top: 30px; font-size: 13px; color: #475569;">
+        &copy; 2026 Online Shopping Hub. All Rights Reserved. <a href="login.html" class="admin-trigger">.</a>
+    </p>
+</footer>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDfTmfa-rjdOOKaKfkiZm5re7F4deVDGf4",
+        authDomain: "shopping-hub-32e5d.firebaseapp.com",
+        projectId: "shopping-hub-32e5d",
+        storageBucket: "shopping-hub-32e5d.firebasestorage.app",
+        messagingSenderId: "905516678846",
+        appId: "1:905516678846:web:602146999a96f6a79928ef"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Load Products
+    const container = document.getElementById('product-container');
+    onSnapshot(query(collection(db, "products"), orderBy("timestamp", "desc")), (snapshot) => {
+        container.innerHTML = "";
+        snapshot.forEach((doc) => {
+            const p = doc.data();
+            container.innerHTML += `
+                <div class="product-card">
+                    <img src="${p.image}" class="product-image" alt="${p.name}">
+                    <div class="product-info">
+                        <span class="category-tag">Best Seller</span>
+                        <div class="product-title">${p.name}</div>
+                        <div class="price-row">
+                            <div class="price">₹${p.price}</div>
+                            <button class="buy-btn" onclick="openOrder('${p.name}')">Buy Now</button>
+                        </div>
+                    </div>
+                </div>`;
+        });
+    });
+
+    // Modal Control
+    window.openOrder = (name) => {
+        document.getElementById('p-name-display').innerText = name;
+        document.getElementById('orderModal').style.display = 'block';
+    }
+
+    window.closeModal = () => {
+        document.getElementById('orderModal').style.display = 'none';
+    }
+
+    // Handle Order Submit
+    document.getElementById('orderForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const data = {
+            product: document.getElementById('p-name-display').innerText,
+            customer: document.getElementById('cust-name').value,
+            phone: document.getElementById('cust-phone').value,
+            address: document.getElementById('cust-address').value,
+            status: "Pending",
+            timestamp: serverTimestamp()
+        };
+
+        try {
+            await addDoc(collection(db, "orders"), data);
+            alert("Order Placed Successfully! We will call you soon.");
+            closeModal();
+            e.target.reset();
+        } catch (err) { alert("Error placing order."); }
+    };
+</script>
+
+</body>
+</html>
