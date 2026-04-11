@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details | Shopping Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+        
+        :root {
+            --primary-blue: #1e40af;
+            --bg-cream: #fdfbf7;
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: var(--bg-cream);
+            color: #222;
+            margin: 0;
+            padding-bottom: 100px; 
+        }
+
+        .product-hero {
+            background: white;
+            width: 100%;
+            position: relative;
+            border-bottom-left-radius: 35px;
+            border-bottom-right-radius: 35px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+            overflow: hidden;
+        }
+
+        #pImg {
+            width: 100%;
+            height: 65vh;
+            object-fit: cover;
+        }
+
+        .action-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            padding: 15px 20px;
+            gap: 12px;
+            border-top: 1px solid #eee;
+            z-index: 1000;
+        }
+
+        .btn-cart {
+            flex: 1;
+            background: white;
+            color: var(--primary-blue);
+            border: 2px solid var(--primary-blue);
+            font-weight: 800;
+            text-transform: uppercase;
+            border-radius: 14px;
+            padding: 14px;
+            font-size: 13px;
+        }
+
+        .btn-buy {
+            flex: 1;
+            background: var(--primary-blue);
+            color: white;
+            font-weight: 800;
+            text-transform: uppercase;
+            border-radius: 14px;
+            padding: 14px;
+            font-size: 13px;
+            box-shadow: 0 8px 15px rgba(30, 64, 175, 0.2);
+        }
+
+        .size-pill {
+            border: 1.5px solid #eee;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .size-pill.active {
+            border-color: var(--primary-blue);
+            background: rgba(30, 64, 175, 0.05);
+            color: var(--primary-blue);
+        }
+
+        .badge-offer {
+            background: #dcfce7;
+            color: #15803d;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="fixed top-5 left-5 z-50 flex justify-between w-[90%] pointer-events-none">
+        <button onclick="history.back()" class="w-10 h-10 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-lg pointer-events-auto">
+            <i class="fa-solid fa-arrow-left text-gray-800"></i>
+        </button>
+        <div class="flex gap-3 pointer-events-auto">
+            <button onclick="shareProduct()" class="w-10 h-10 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-lg">
+                <i class="fa-solid fa-share-nodes text-gray-800"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="product-hero">
+        <img id="pImg" src="" alt="Loading...">
+    </div>
+
+    <div class="max-w-xl mx-auto px-5 mt-6">
+        <div class="bg-white p-6 rounded-[28px] shadow-sm">
+            <h1 id="pName" class="text-xl font-extrabold text-gray-800 tracking-tight leading-tight uppercase">Product Name</h1>
+            
+            <div id="price-container" class="mt-4 flex items-center gap-3">
+                <span id="pPrice" class="text-3xl font-black text-blue-900 tracking-tighter">₹0</span>
+                </div>
+
+            <div class="mt-4 flex items-center gap-4 text-gray-400">
+                <div class="flex items-center gap-1">
+                    <i class="fa-solid fa-truck-fast text-blue-600 text-xs"></i>
+                    <span id="delivery-info" class="text-[11px] font-bold uppercase tracking-wider">Delivery in 2-10 Days</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-5 bg-white p-6 rounded-[28px] shadow-sm">
+            <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-[3px] mb-4">Select Size</h3>
+            <div id="sizeContainer" class="flex flex-wrap gap-3">
+                </div>
+        </div>
+
+        <div class="mt-5 bg-white p-6 rounded-[28px] shadow-sm mb-10">
+            <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-[3px] mb-4">Product Details</h3>
+            <p id="pDesc" class="text-sm text-gray-500 font-medium leading-relaxed">
+                Loading description...
+            </p>
+        </div>
+    </div>
+
+    <div class="action-bar">
+        <button onclick="addToCart()" class="btn-cart">
+            Add to Cart
+        </button>
+        <button onclick="buyNow()" class="btn-buy">
+            Buy Now
+        </button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDfTmfa-rjdOOKaKfkiZm5re7F4deVDGf4",
+            authDomain: "shopping-hub-32e5d.firebaseapp.com",
+            projectId: "shopping-hub-32e5d",
+            storageBucket: "shopping-hub-32e5d.firebasestorage.app",
+            messagingSenderId: "905516678846",
+            appId: "1:905516678846:web:602146999a96f6a79928ef"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const productId = urlParams.get('id');
+        let selectedSize = null;
+
+        async function fetchProduct() {
+            if(!productId) return;
+            const docRef = doc(db, "products", productId);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const p = docSnap.data();
+                
+                // Set Data
+                document.getElementById('pName').innerText = p.name;
+                document.getElementById('pImg').src = p.image;
+                document.getElementById('pDesc').innerText = p.description || "Premium quality product curated for you.";
+                
+                // Price & Offer Logic
+                const priceContainer = document.getElementById('price-container');
+                if(p.originalPrice && p.originalPrice > p.price) {
+                    const discount = Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100);
+                    priceContainer.innerHTML = `
+                        <span class="text-3xl font-black text-blue-900 tracking-tighter">₹${p.price}</span>
+                        <span class="text-sm text-gray-400 font-medium line-through">₹${p.originalPrice}</span>
+                        <span class="badge-offer">${discount}% OFF</span>
+                    `;
+                } else {
+                    priceContainer.innerHTML = `<span class="text-3xl font-black text-blue-900 tracking-tighter">₹${p.price}</span>`;
+                }
+
+                // Size Logic
+                const sizeContainer = document.getElementById('sizeContainer');
+                if(p.sizes && p.sizes.length > 0) {
+                    p.sizes.forEach(size => {
+                        const btn = document.createElement('div');
+                        btn.className = 'size-pill';
+                        btn.innerText = size;
+                        btn.onclick = () => {
+                            document.querySelectorAll('.size-pill').forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+                            selectedSize = size;
+                        };
+                        sizeContainer.appendChild(btn);
+                    });
+                } else {
+                    sizeContainer.innerHTML = "<p class='text-xs font-bold text-gray-300'>Free Size</p>";
+                }
+            }
+        }
+
+        window.shareProduct = () => {
+            if (navigator.share) {
+                navigator.share({
+                    title: document.getElementById('pName').innerText,
+                    url: window.location.href,
+                });
+            }
+        };
+
+        window.buyNow = () => {
+            if(!selectedSize && document.querySelectorAll('.size-pill').length > 0) {
+                alert("Please select a size first!");
+                return;
+            }
+            window.location.href = `checkout.html?id=${productId}&size=${selectedSize || 'Free'}`;
+        };
+
+        window.addToCart = () => {
+            alert("Product added to cart!");
+        };
+
+        fetchProduct();
+    </script>
+</body>
+</html>
