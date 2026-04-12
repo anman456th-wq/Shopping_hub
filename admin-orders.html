@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Admin | Order Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+        
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #f4f7fe; 
+            color: #1a1a1a;
+        }
+
+        .admin-card {
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.03);
+            border: 1px solid #eef2f6;
+            overflow: hidden;
+            transition: 0.3s;
+        }
+
+        .status-select {
+            padding: 12px 18px;
+            border-radius: 14px;
+            font-size: 12px;
+            font-weight: 800;
+            border: 2px solid #f1f5f9;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .copy-btn {
+            background: #1e40af;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .delete-btn {
+            background: #fff1f2;
+            color: #be123c;
+            padding: 8px;
+            border-radius: 10px;
+            border: 1px solid #fecdd3;
+        }
+
+        .delete-btn:hover { background: #be123c; color: white; }
+
+        .navy-header { background: #0f172a; color: white; }
+
+        .detail-label {
+            font-size: 9px;
+            font-weight: 900;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+        }
+
+        .detail-value {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        /* ਖਾਸ ਸਾਈਜ਼ ਬੈਜ */
+        .size-badge {
+            background: #fef9c3;
+            color: #854d0e;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 900;
+            border: 1.5px solid #facc15;
+            display: inline-block;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 pb-20">
+
+    <div class="navy-header p-8 mb-10 shadow-xl">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-black tracking-tighter">Orders Dashboard</h1>
+                <p class="text-blue-400 text-xs font-bold uppercase tracking-[4px] mt-2">Manage Incoming Orders</p>
+            </div>
+            <button onclick="location.reload()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl text-xs font-black transition all flex items-center gap-2">
+                <i class="fa-solid fa-arrows-rotate"></i> REFRESH DATA
+            </button>
+        </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto px-4 pb-20">
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            <div class="bg-white p-8 rounded-[32px] border border-blue-50 shadow-sm relative overflow-hidden group">
+                <p class="text-gray-400 text-[10px] font-black uppercase tracking-widest relative z-10">Total Volume</p>
+                <h2 id="totalCount" class="text-4xl font-black text-blue-900 mt-2 tracking-tighter relative z-10">0</h2>
+                <i class="fa-solid fa-box absolute -right-4 -bottom-4 text-7xl text-blue-50 group-hover:scale-110 transition duration-500"></i>
+            </div>
+            <div class="bg-white p-8 rounded-[32px] border border-yellow-50 shadow-sm relative overflow-hidden group">
+                <p class="text-gray-400 text-[10px] font-black uppercase tracking-widest relative z-10">Waiting Action</p>
+                <h2 id="pendingCount" class="text-4xl font-black text-yellow-600 mt-2 tracking-tighter relative z-10">0</h2>
+                <i class="fa-solid fa-clock-rotate-left absolute -right-4 -bottom-4 text-7xl text-yellow-50 group-hover:scale-110 transition duration-500"></i>
+            </div>
+            <div class="bg-white p-8 rounded-[32px] border border-green-50 shadow-sm relative overflow-hidden group">
+                <p class="text-gray-400 text-[10px] font-black uppercase tracking-widest relative z-10">Successful</p>
+                <h2 id="completedCount" class="text-4xl font-black text-green-600 mt-2 tracking-tighter relative z-10">0</h2>
+                <i class="fa-solid fa-check-double absolute -right-4 -bottom-4 text-7xl text-green-50 group-hover:scale-110 transition duration-500"></i>
+            </div>
+        </div>
+
+        <div id="adminOrdersList" class="space-y-8">
+            <div id="loader" class="text-center py-20 bg-white rounded-[40px] border border-gray-100 shadow-sm">
+                <i class="fa-solid fa-spinner animate-spin text-4xl text-blue-800"></i>
+                <p class="mt-4 font-black text-gray-400 text-xs uppercase tracking-widest">Database Sync...</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, getDocs, updateDoc, deleteDoc, doc, orderBy, query } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDfTmfa-rjdOOKaKfkiZm5re7F4deVDGf4",
+            authDomain: "shopping-hub-32e5d.firebaseapp.com",
+            projectId: "shopping-hub-32e5d",
+            storageBucket: "shopping-hub-32e5d.firebasestorage.app",
+            messagingSenderId: "905516678846",
+            appId: "1:905516678846:web:602146999a96f6a79928ef"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        async function fetchOrders() {
+            const list = document.getElementById('adminOrdersList');
+            
+            try {
+                const q = query(collection(db, "orders"), orderBy("orderDate", "desc"));
+                const snapshot = await getDocs(q);
+                
+                list.innerHTML = '';
+                let total = 0, pending = 0, completed = 0;
+
+                snapshot.forEach((orderDoc) => {
+                    const data = orderDoc.data();
+                    const id = orderDoc.id;
+                    total++;
+                    if(data.status === 'Pending') pending++;
+                    if(data.status === 'Delivered') completed++;
+
+                    const addressFull = `${data.customerName}, ${data.houseNo}, ${data.roadArea}, ${data.city}, ${data.state}, Pin: ${data.pincode}, Phone: ${data.phone}`;
+
+                    const cardHTML = `
+                        <div class="admin-card">
+                            <div class="p-8 relative">
+                                <button onclick="confirmDelete('${id}')" class="delete-btn absolute top-6 right-6" title="Delete Order">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+
+                                <div class="flex items-center gap-4 mb-8">
+                                    <div class="w-12 h-12 bg-gray-900 rounded-2xl flex items-center justify-center text-white font-black text-sm">
+                                        ${total}
+                                    </div>
+                                    <div>
+                                        <span class="bg-blue-100 text-blue-700 text-[9px] font-black px-3 py-1 rounded-md uppercase tracking-widest">ID: #${id.substring(0,8)}</span>
+                                        <h3 class="text-xl font-black text-gray-900 mt-1">${data.customerName}</h3>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                                    
+                                    <div class="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                                        <div class="flex items-center gap-3 text-blue-600 font-extrabold mb-5 p-3 bg-white rounded-xl shadow-sm border border-gray-100">
+                                            <i class="fa-solid fa-phone"></i>
+                                            <span>${data.phone}</span>
+                                        </div>
+                                        
+                                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Delivery Address</p>
+                                        
+                                        <p class="detail-label">House / Office No.</p>
+                                        <p class="detail-value">${data.houseNo}</p>
+
+                                        <p class="detail-label">Area / Road / Village</p>
+                                        <p class="detail-value">${data.roadArea}</p>
+
+                                        <p class="detail-label">City / District</p>
+                                        <p class="detail-value">${data.city}</p>
+
+                                        <p class="detail-label">State & Pincode</p>
+                                        <p class="detail-value">${data.state} - <span class="text-blue-600">${data.pincode}</span></p>
+
+                                        <button onclick="copyToClipboard('${addressFull}')" class="copy-btn mt-4 w-full justify-center">
+                                            <i class="fa-solid fa-copy"></i> COPY FULL FOR MEESHO
+                                        </button>
+                                    </div>
+
+                                    <div class="bg-white p-6 rounded-2xl border-2 border-gray-50 flex flex-col justify-between">
+                                        <div>
+                                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Ordered Product</p>
+                                            <div class="flex items-start gap-5">
+                                                <img src="${data.image}" class="w-20 h-28 rounded-xl object-cover shadow-md border border-gray-100">
+                                                <div class="flex-1">
+                                                    <p class="text-sm font-black text-gray-800 leading-tight">${data.productName}</p>
+                                                    
+                                                    <div class="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
+                                                        <p class="text-[10px] font-black text-yellow-800 uppercase">Customer Selected Size</p>
+                                                        <span class="size-badge">${data.size || 'N/A'}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-6 pt-5 border-t border-gray-50">
+                                            <p class="text-[10px] font-black text-gray-400 uppercase">Amount Due (COD)</p>
+                                            <p class="text-3xl font-black text-green-600 tracking-tighter">₹${data.price}</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-gray-50 p-6 rounded-2xl border border-gray-100 flex flex-col justify-center items-center text-center">
+                                        <p class="text-[10px] font-black text-gray-400 uppercase mb-4 tracking-widest">Update Order Status</p>
+                                        <select onchange="updateStatus('${id}', this.value)" class="status-select w-full ${getStatusColor(data.status)} shadow-sm">
+                                            <option value="Pending" ${data.status === 'Pending' ? 'selected' : ''}>⏳ Pending</option>
+                                            <option value="Shipped" ${data.status === 'Shipped' ? 'selected' : ''}>🚚 Shipped</option>
+                                            <option value="Delivered" ${data.status === 'Delivered' ? 'selected' : ''}>✅ Delivered</option>
+                                            <option value="Cancelled" ${data.status === 'Cancelled' ? 'selected' : ''}>❌ Cancelled</option>
+                                        </select>
+                                        <p class="text-[9px] text-gray-400 mt-6 font-bold leading-relaxed italic uppercase tracking-wider">
+                                            Auto-syncs with customer <br> "My Orders" dashboard
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    list.innerHTML += cardHTML;
+                });
+
+                document.getElementById('totalCount').innerText = total;
+                document.getElementById('pendingCount').innerText = pending;
+                document.getElementById('completedCount').innerText = completed;
+
+            } catch (err) {
+                console.error(err);
+                list.innerHTML = `<p class="p-10 bg-red-50 text-red-600 rounded-3xl font-bold">Error: ${err.message}</p>`;
+            }
+        }
+
+        // Global functions
+        window.updateStatus = async (orderId, newStatus) => {
+            const orderRef = doc(db, "orders", orderId);
+            try {
+                await updateDoc(orderRef, { status: newStatus });
+                alert("Status Updated Successfully to " + newStatus);
+            } catch (err) { alert("Update Failed: " + err.message); }
+        }
+
+        window.confirmDelete = async (orderId) => {
+            if(confirm("⚠️ ਕੀ ਤੁਸੀਂ ਸੱਚਮੁੱਚ ਇਸ ਆਰਡਰ ਨੂੰ ਡਿਲੀਟ ਕਰਨਾ ਚਾਹੁੰਦੇ ਹੋ? ਇਹ ਵਾਪਸ ਨਹੀਂ ਆਵੇਗਾ।")) {
+                try {
+                    await deleteDoc(doc(db, "orders", orderId));
+                    alert("Order Deleted Successfully.");
+                    fetchOrders(); // Refresh list
+                } catch (err) { alert("Delete Failed: " + err.message); }
+            }
+        }
+
+        window.copyToClipboard = (text) => {
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Address Copied! Now you can paste it in Meesho.");
+            });
+        }
+
+        function getStatusColor(status) {
+            if(status === 'Pending') return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+            if(status === 'Shipped') return 'bg-blue-100 text-blue-700 border-blue-200';
+            if(status === 'Delivered') return 'bg-green-100 text-green-700 border-green-200';
+            if(status === 'Cancelled') return 'bg-red-100 text-red-700 border-red-200';
+            return 'bg-gray-100 text-gray-700 border-gray-200';
+        }
+
+        fetchOrders();
+    </script>
+</body>
+</html>
