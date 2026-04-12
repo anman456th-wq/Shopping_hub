@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Checkout | Shopping Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+        
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: #fdfbf7; 
+            color: #1a1a1a;
+        }
+
+        .checkout-container {
+            max-width: 650px;
+            margin: 40px auto;
+            background: #ffffff;
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.05);
+            border: 1px solid #f1f5f9;
+        }
+
+        .input-group { position: relative; margin-bottom: 22px; }
+
+        .input-field, .select-field {
+            width: 100%;
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            padding: 18px 20px;
+            border-radius: 14px;
+            font-size: 15px;
+            outline: none;
+            transition: 0.3s;
+            appearance: none;
+        }
+
+        .input-field:focus, .select-field:focus {
+            border-color: #1e40af;
+            box-shadow: 0 0 0 4px rgba(30, 64, 175, 0.05);
+        }
+
+        .float-label {
+            position: absolute;
+            top: 18px; left: 20px;
+            pointer-events: none; color: #94a3b8;
+            font-size: 14px; transition: 0.3s;
+        }
+
+        .input-field:focus ~ .float-label,
+        .input-field:not(:placeholder-shown) ~ .float-label,
+        .select-field:focus ~ .float-label,
+        .select-field:valid ~ .float-label {
+            transform: translateY(-35px) scale(0.85);
+            color: #1e40af;
+            font-weight: 800;
+            left: 10px;
+            background: #fff;
+            padding: 0 5px;
+        }
+
+        /* --- Cash on Delivery Box (ਤੁਹਾਡੀ ਪਸੰਦ ਮੁਤਾਬਕ) --- */
+        .cod-selection-box {
+            border: 2px solid #1e40af;
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f8faff;
+            margin-bottom: 30px;
+            cursor: pointer;
+        }
+
+        .blue-dot-outer {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #1e40af;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .blue-dot-inner {
+            width: 12px;
+            height: 12px;
+            background: #1e40af;
+            border-radius: 50%;
+        }
+
+        .confirm-order-btn {
+            width: 100%;
+            background: #1e40af;
+            color: white;
+            padding: 22px;
+            border-radius: 16px;
+            font-weight: 800;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: 0.3s;
+            box-shadow: 0 10px 25px rgba(30, 64, 175, 0.2);
+        }
+
+        .confirm-order-btn:hover {
+            background: #1e3a8a;
+            transform: translateY(-2px);
+        }
+
+        .overlay {
+            position: fixed; inset: 0; background: rgba(255,255,255,0.98);
+            display: none; flex-direction: column; align-items: center;
+            justify-content: center; z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="orderOverlay" class="overlay">
+        <i class="fa-solid fa-circle-notch animate-spin text-5xl text-blue-800 mb-6"></i>
+        <h2 class="text-xl font-bold text-gray-900 uppercase tracking-tight">Confirming Your Order...</h2>
+    </div>
+
+    <div class="px-4 py-6">
+        <div class="checkout-container">
+            <div class="flex items-center gap-4 mb-10 pb-6 border-b border-gray-100">
+                <a href="index.html" class="w-10 h-10 border rounded-full flex items-center justify-center">
+                    <i class="fa-solid fa-arrow-left text-blue-600"></i>
+                </a>
+                <h1 class="text-2xl font-black text-blue-900 uppercase">Delivery Address</h1>
+            </div>
+
+            <form id="checkoutForm">
+                <div class="input-group">
+                    <input type="text" id="fullName" class="input-field" placeholder=" " required>
+                    <label class="float-label">Full Name *</label>
+                </div>
+
+                <div class="input-group">
+                    <input type="tel" id="mobile" class="input-field" placeholder=" " pattern="[6-9][0-9]{9}" maxlength="10" required>
+                    <label class="float-label">Mobile Number *</label>
+                </div>
+
+                <div class="input-group">
+                    <input type="number" id="pincode" class="input-field border-2 border-blue-100" placeholder=" " oninput="fetchLocation(this.value)" required>
+                    <label class="float-label font-black text-blue-700">Pincode *</label>
+                    <div id="pinLoader" class="absolute right-5 top-5 hidden"><i class="fa-solid fa-spinner animate-spin text-blue-600"></i></div>
+                </div>
+
+                <div class="input-group">
+                    <select id="citySelect" class="select-field bg-gray-50" required>
+                        <option value="" disabled selected></option>
+                    </select>
+                    <label class="float-label">City / Local Area *</label>
+                    <i class="fa-solid fa-chevron-down absolute right-5 top-6 text-gray-400 pointer-events-none"></i>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="input-group">
+                        <input type="text" id="district" class="input-field bg-gray-50" placeholder=" " readonly required>
+                        <label class="float-label">District</label>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="state" class="input-field bg-gray-50" placeholder=" " readonly required>
+                        <label class="float-label">State</label>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <input type="text" id="house" class="input-field" placeholder=" " required>
+                    <label class="float-label">House No. / Building *</label>
+                </div>
+
+                <div class="input-group">
+                    <input type="text" id="area" class="input-field" placeholder=" " required>
+                    <label class="float-label">Road / Colony / Landmark *</label>
+                </div>
+
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-[2px] mb-3 ml-1">Payment Method</p>
+                <div class="cod-selection-box">
+                    <div class="flex items-center gap-4">
+                        <i class="fa-solid fa-money-bill-wave text-blue-800 text-xl"></i>
+                        <span class="font-black text-gray-900 text-lg uppercase">Cash on Delivery</span>
+                    </div>
+                    <div class="blue-dot-outer">
+                        <div class="blue-dot-inner"></div>
+                    </div>
+                </div>
+
+                <button type="submit" class="confirm-order-btn">
+                    Confirm Order
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDfTmfa-rjdOOKaKfkiZm5re7F4deVDGf4",
+            authDomain: "shopping-hub-32e5d.firebaseapp.com",
+            projectId: "shopping-hub-32e5d",
+            storageBucket: "shopping-hub-32e5d.firebasestorage.app",
+            messagingSenderId: "905516678846",
+            appId: "1:905516678846:web:602146999a96f6a79928ef"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let currentUser = null;
+        let productData = null;
+        const urlParams = new URLSearchParams(window.location.search);
+        const productId = urlParams.get('id');
+        const selectedSize = urlParams.get('size') || "N/A";
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                if(productId) {
+                    const docSnap = await getDoc(doc(db, "products", productId));
+                    if(docSnap.exists()) productData = docSnap.data();
+                }
+            }
+        });
+
+        window.fetchLocation = async (pin) => {
+            const citySelect = document.getElementById('citySelect');
+            if(pin.length === 6) {
+                document.getElementById('pinLoader').classList.remove('hidden');
+                try {
+                    const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+                    const data = await res.json();
+                    if(data[0].Status === "Success") {
+                        const areas = data[0].PostOffice;
+                        citySelect.innerHTML = '<option value="" disabled selected>Select Your Area</option>';
+                        areas.forEach(place => {
+                            const opt = document.createElement('option');
+                            opt.value = place.Name;
+                            opt.textContent = place.Name;
+                            citySelect.appendChild(opt);
+                        });
+                        document.getElementById('district').value = areas[0].District;
+                        document.getElementById('state').value = areas[0].State;
+                    }
+                } catch (e) { console.error("Error"); }
+                document.getElementById('pinLoader').classList.add('hidden');
+            }
+        };
+
+        document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            document.getElementById('orderOverlay').style.display = 'flex';
+
+            const orderPayload = {
+                userEmail: currentUser ? currentUser.email : "Guest",
+                customerName: document.getElementById('fullName').value,
+                phone: document.getElementById('mobile').value,
+                houseNo: document.getElementById('house').value,
+                roadArea: document.getElementById('area').value,
+                pincode: document.getElementById('pincode').value,
+                city: document.getElementById('citySelect').value,
+                district: document.getElementById('district').value,
+                state: document.getElementById('state').value,
+                size: selectedSize,
+                productName: productData ? productData.name : "Product",
+                price: productData ? productData.price : "0",
+                image: productData ? productData.image : "",
+                status: "Pending",
+                orderDate: serverTimestamp()
+            };
+
+            try {
+                await addDoc(collection(db, "orders"), orderPayload);
+                window.location.href = "my-orders.html";
+            } catch (err) {
+                alert("Error: " + err.message);
+                document.getElementById('orderOverlay').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
